@@ -3,59 +3,143 @@
 #include <math.h>
 #include <GL/glut.h>
 
-float gangle = 0;
+float angleX = 0; //any
+float angleY = 0; //-90 +90
+float shift = 0;
 
-void pyramid(float angle) {
-  glRotatef(angle, 0, 0, 1);
-  
-  glBegin(GL_TRIANGLE_FAN);
+float gangle = 0;
+float gx = 0;
+float gy = 0;
+float gangleUp = 0;
+float gangleRot = 0;
+
+float toRadians(float angle) {
+  return angle * (M_PI / 180);
+}
+
+void triangle(float angleUp, float angleRot, float length) {
+  glPushMatrix();
+  glRotatef(angleRot, 0, 1, 0);
+  glRotatef(angleUp, 1, 0, 0);
+
+  glColor3f(1.0,0.0,1.0);
+  glBegin(GL_TRIANGLES);
+    glNormal3d(0, 0, 1);
     glVertex3f(0, 0, 0);
-    glVertex3f(10, 20, 10);
-    glVertex3f(-10, 20, 10);
-    glVertex3f(-10, 20, -10);
-    glVertex3f(10, 20, -10);
-    glVertex3f(10, 20, 10);
+    glVertex3f(length * sin(toRadians(angleUp)), 
+               length, 0);
+    glVertex3f(-length * sin(toRadians(angleUp)), 
+               length, 0);
   glEnd();
+  glPopMatrix();
+}
+
+void pyramid(float angle, float angleWidth, float length) {
+  //glTranslatef(gx, gy, 0);
+  glPushMatrix();
+  //glRotatef(angle, 0, 0, 1);
+  triangle(angleWidth, 0, length);
+  triangle(angleWidth, 90, length);
+  triangle(angleWidth, 180, length);
+  triangle(angleWidth, 270, length);
+  float cosWidth = length * cos(toRadians(angleWidth));
+  float sinWidth = length * sin(toRadians(angleWidth));
   glBegin(GL_QUADS);
-    glVertex3f(10, 20, 10);
-    glVertex3f(-10, 20, 10);
-    glVertex3f(-10, 20, -10);
-    glVertex3f(10, 20, -10);
+    glNormal3d(0, 1, 0);
+    glVertex3f(sinWidth, 
+               cosWidth, 
+               -sinWidth);
+    glVertex3f(-sinWidth, 
+               cosWidth, 
+               -sinWidth);
+    glVertex3f(-sinWidth, 
+               cosWidth, 
+               sinWidth);
+    glVertex3f(sinWidth, 
+               cosWidth, 
+               sinWidth);
   glEnd();
+  glPopMatrix();
+}
+
+void petal(float angle) {
+  glPushMatrix();
+  glRotatef(angle, 0, 0, 1);
+  pyramid(0, 10, 20);
+  glTranslatef(0, 35, 0);
+  glColor3f(0.0,0.0,1.0);
+  glutSolidSphere(5, 100, 100);
+  glPopMatrix();
 }
 
 void display(void) {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glLoadIdentity();
-  pyramid(gangle);
-  glutSwapBuffers();
-}
+  glTranslatef(0, 0, -100);
+  glRotatef(angleY, 1, 0, 0);
+  glRotatef(angleX, 0, 1, 0);
 
-void keyboard(unsigned char key, int x, int y){
-}
-
-void keyboard2(int key, int x, int y){
-  if( key == GLUT_KEY_UP ){
-    gangle += 10;
-    display();  
-  }
-}
-
-void init(void) {
   GLfloat light_diffuse[] = {1.0, 1.0, 1.0, 1.0};
   GLfloat light_position[] = {-1.0, -1.0, 1.0, 0.0};
 
   glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
   glLightfv(GL_LIGHT0, GL_POSITION, light_position);
+  //glRotatef(100, -10, 0, 0);
+  petal(0);
+  petal(90);
+  petal(180);
+  petal(270);
+  glutSwapBuffers();
+}
+
+void keyboard(unsigned char key, int x, int y){
+  if (key == 'w') {
+    gy += 10;
+    display();
+  } else if (key == 's') {
+    gy -= 10;
+    display();
+  } else if (key == 'a') {
+    gx -= 10;
+    display();
+  } else if (key == 'd') {
+    gx += 10;
+    display();
+  }
+}
+
+void keyboard2(int key, int x, int y){
+  if( key == GLUT_KEY_UP ){
+    angleY += 2;
+    if (angleY > 90)
+      angleY = 90;
+    display();  
+  } else if( key == GLUT_KEY_DOWN ){
+    angleY -= 2;
+    if (angleY < -90)
+      angleY = -90;
+    display();  
+  } else if( key == GLUT_KEY_RIGHT ){
+    angleX += 2;
+    display();  
+  } else if( key == GLUT_KEY_LEFT ){
+    angleX -= 2;
+    display();  
+  }
+}
+
+void init(void) {
+  
   glEnable(GL_LIGHT0);
   glEnable(GL_LIGHTING);
-
+  glEnable(GL_COLOR_MATERIAL);
+  glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT);
   glEnable(GL_DEPTH_TEST);
   
   glMatrixMode(GL_PROJECTION);
-  glOrtho(-50, 50, -50, 50, -50, 50);
+  //glOrtho(-50, 50, -50, 50, -50, 50);
 
-  //gluPerspective(50.0, 1.0, 1.0, 15.0);
+  gluPerspective(50.0, 1.0, 1.0, 1000.0);
   glMatrixMode(GL_MODELVIEW);
 }
 
