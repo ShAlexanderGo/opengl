@@ -6,6 +6,8 @@
 float angleX = 0; //any
 float angleY = 0; //-90 +90
 float shift = 0;
+float speed = 2;
+float scale = 1.0;
 
 float gangle = 0;
 float gx = 0;
@@ -66,7 +68,7 @@ void petal(float angle) {
   glPushMatrix();
   glRotatef(angle, 0, 0, 1);
   pyramid(0, 10, 20);
-  glTranslatef(0, 35, 0);
+  glTranslatef(0, 35+shift, 0);
   glColor3f(0.0,0.0,1.0);
   glutSolidSphere(5, 100, 100);
   glPopMatrix();
@@ -76,9 +78,11 @@ void display(void) {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glLoadIdentity();
   glTranslatef(0, 0, -100);
+  glScalef(scale, scale, scale);
   glRotatef(angleY, 1, 0, 0);
   glRotatef(angleX, 0, 1, 0);
 
+  
   GLfloat light_diffuse[] = {1.0, 1.0, 1.0, 1.0};
   GLfloat light_position[] = {-1.0, -1.0, 1.0, 0.0};
 
@@ -92,20 +96,18 @@ void display(void) {
   glutSwapBuffers();
 }
 
+int animated = 0;
+
 void keyboard(unsigned char key, int x, int y){
-  if (key == 'w') {
-    gy += 10;
-    display();
-  } else if (key == 's') {
-    gy -= 10;
-    display();
-  } else if (key == 'a') {
-    gx -= 10;
-    display();
-  } else if (key == 'd') {
-    gx += 10;
-    display();
-  }
+ if (key == 'p') {
+   animated = 0;
+ } else if (key == 's') {
+   animated = 1;
+ } else if (key == '+') {
+   scale *= 1.1;
+ } else if (key == '-') {
+   scale /= 1.1;
+ }
 }
 
 void keyboard2(int key, int x, int y){
@@ -133,9 +135,9 @@ void init(void) {
   glEnable(GL_LIGHT0);
   glEnable(GL_LIGHTING);
   glEnable(GL_COLOR_MATERIAL);
-  glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT);
+  glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
   glEnable(GL_DEPTH_TEST);
-  
+
   glMatrixMode(GL_PROJECTION);
   //glOrtho(-50, 50, -50, 50, -50, 50);
 
@@ -143,14 +145,26 @@ void init(void) {
   glMatrixMode(GL_MODELVIEW);
 }
 
+void update(int value) {
+  if (animated) {
+    shift += speed;
+  }
+  if ((shift > 10) || (shift < 0)) {
+    speed *= -1;
+  }
+  glutTimerFunc(30, update, 0);
+  display();
+}
+
 int main(int argc, char **argv) {
   glutInit(&argc, argv);
-  glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
+  glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_MULTISAMPLE);
   glutCreateWindow("Star");
   glutDisplayFunc(display);  
   glutKeyboardFunc(keyboard);
   glutSpecialFunc(keyboard2);
   init();
+  glutTimerFunc(30, update, 0);
   glutMainLoop();
   return 0;             
 }
