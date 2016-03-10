@@ -18,10 +18,11 @@ float C = 1;
 
 float func(float x, float y) {
   float right = ((x*x)/(A*A)) + ((y*y)/(B*B)) - 1;
-  return (C*sqrt(right));
+  return (C*sqrt(right)*10);
 }
 
 void display(void) {
+  float z_rot = func(15,10);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
@@ -29,11 +30,14 @@ void display(void) {
   glScalef(scale, scale, scale);
   glRotatef(angleY, 1, 0, 0);
   glRotatef(angleX, 0, 1, 0);
-  glRotatef(90, 1, 0, 0);
+  //glRotatef(90, 1, 0, 0);
 
-  glTranslatef(15, 10, 0);
+  glTranslatef(15, 10, z_rot);
   glRotatef(angle, 0, 0, 1);
-  glTranslatef(-15, -10, 0);
+  glColor3f(1.0,0.0,0.0);
+  glutSolidSphere(3, 50, 50);
+  glTranslatef(-15, -10, z_rot);
+  glColor3f(1.0,1.0,1.0);
   int x, y;
   for (x = -100; x < 100; x += 5) {
     for (y = -100; y < 100; y += 5) {

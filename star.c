@@ -13,7 +13,7 @@ const float LENGTH = 30.0; //how long pyramids
 const float SPHERE_RADIUS = 5.0;
 
 const float SPHERE_SHIFT_MIN = 35.0;
-const float SPHERE_SHIFT_MAX = 45.0;
+const float SPHERE_SHIFT_MAX = 100.0;
 
 const float PYRAMID_COLOR[] = {1.0, 0.0, 1.0};
 const float SPHERE_COLOR[] = {0.0,0.0,1.0};
@@ -27,6 +27,18 @@ float shift = 35;
 float anDir = 1.0;
 float scale = 1.0;
 int animated = 0;
+/*
+float eyeX = 0;
+float eyeY = 0;
+float eyeZ = 100;
+
+float upX = 1;
+float upY = 0;
+float upZ = 0;
+
+float eyeXupX 
+
+float */
 
 //Degrees to radians
 float toRadians(float angle) {
@@ -96,7 +108,7 @@ void display(void) {
   glScalef(scale, scale, scale);
   glRotatef(angleY, 1, 0, 0);
   glRotatef(angleX, 0, 1, 0);
-
+  //gluLookAt(0, 0, 100, 0, 0, 0, 1, 0, 0);
   glLightfv(GL_LIGHT0, GL_DIFFUSE, LIGHT_DIF);
   glLightfv(GL_LIGHT0, GL_POSITION, LIGHT_POS);
   petal(0);
