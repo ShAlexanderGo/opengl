@@ -3,8 +3,6 @@
 #include <math.h>
 #include <GL/glut.h>
 
-const float ANGLE_X_STEP = 2;
-const float ANGLE_Y_STEP = 2;
 const float SCALE_STEP = 1.1; //>1.0
 const float SPEED = 1.5;
 
@@ -21,16 +19,13 @@ const float SPHERE_COLOR[] = {0.0,0.0,1.0};
 const float LIGHT_DIF[] = {1.0, 1.0, 1.0, 1.0};
 const float LIGHT_POS[] = {-1.0, -1.0, 1.0, 0.0};
 
-float angleX = 0; //any
-float angleY = 0; //-90 +90
 float shift = 35;
 float anDir = 1.0;
 float scale = 1.0;
 int animated = 0;
-
 ////////////////////////////////////
 float radius = 100;
-float speed = 0.07;
+const float ANGLE_SPEED = 0.07;
 float eyeX = 0;
 float eyeY = 0;
 float eyeZ = 1;
@@ -67,83 +62,156 @@ float toRadians(float angle) {
   return angle * (M_PI / 180);
 }
 
+//triangle along y axis, with angleRot rotation, angleUp - angle from axis y
+void triangle(float angleUp, float angleRot, float length) {
+  glPushMatrix();
+  glRotatef(angleRot, 0, 1, 0);
+  glRotatef(angleUp, 1, 0, 0);
+
+  glColor3fv(PYRAMID_COLOR);
+  glBegin(GL_TRIANGLES);
+    glNormal3d(0, 0, 1);
+    glVertex3f(0, 0, 0);
+    glVertex3f(length * sin(toRadians(angleUp)), 
+               length, 0);
+    glVertex3f(-length * sin(toRadians(angleUp)), 
+               length, 0);
+  glEnd();
+  glPopMatrix();
+}
+
+//angleWidth - how flat pyramid
+void pyramid(float angleWidth, float length) {
+  glPushMatrix();
+  triangle(angleWidth, 0, length);
+  triangle(angleWidth, 90, length);
+  triangle(angleWidth, 180, length);
+  triangle(angleWidth, 270, length);
+  float cosWidth = length * cos(toRadians(angleWidth));
+  float sinWidth = length * sin(toRadians(angleWidth));
+  glBegin(GL_QUADS);
+    glNormal3d(0, 1, 0);
+    glVertex3f(sinWidth, 
+               cosWidth, 
+               -sinWidth);
+    glVertex3f(-sinWidth, 
+               cosWidth, 
+               -sinWidth);
+    glVertex3f(-sinWidth, 
+               cosWidth, 
+               sinWidth);
+    glVertex3f(sinWidth, 
+               cosWidth, 
+               sinWidth);
+  glEnd();
+  glPopMatrix();
+}
+
+//angle - direction of petal
+void petal(float angle) {
+  glPushMatrix();
+  glRotatef(angle, 0, 0, 1);
+  pyramid(ANGLE_WIDTH, LENGTH);
+  glTranslatef(0, shift, 0);
+  glColor3fv(SPHERE_COLOR);
+  glutSolidSphere(SPHERE_RADIUS, 100, 100);
+  glPopMatrix();
+}
 
 void display(void) {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glLoadIdentity();
-  //glTranslatef(0, 0, -100);
-  //glScalef(scale, scale, scale);
-  //glRotatef(angleY, 1, 0, 0);
-  //glRotatef(angleX, 0, 1, 0);
   gluLookAt(radius*eyeX, radius*eyeY, radius*eyeZ, 0, 0, 0, upX, upY, upZ);
   glLightfv(GL_LIGHT0, GL_DIFFUSE, LIGHT_DIF);
   glLightfv(GL_LIGHT0, GL_POSITION, LIGHT_POS);
-  glutSolidCube(20);
+  petal(0);
+  petal(90);
+  petal(180);
+  petal(270);
   glutSwapBuffers();
 }
 
 void keyboard(unsigned char key, int x, int y){
   if (key == 'w') {
-    eyeX += upX * speed;
-    eyeY += upY * speed;
-    eyeZ += upZ * speed;
+    eyeX += upX * ANGLE_SPEED;
+    eyeY += upY * ANGLE_SPEED;
+    eyeZ += upZ * ANGLE_SPEED;
     normalize(&eyeX, &eyeY, &eyeZ, 1);
     crossProduct(rightX, rightY, rightZ, 
                  eyeX, eyeY, eyeZ, 
                  &upX, &upY, &upZ, 1);
     display();
   } else if (key == 's') {
-    eyeX -= upX * speed;
-    eyeY -= upY * speed;
-    eyeZ -= upZ * speed;
+    eyeX -= upX * ANGLE_SPEED;
+    eyeY -= upY * ANGLE_SPEED;
+    eyeZ -= upZ * ANGLE_SPEED;
     normalize(&eyeX, &eyeY, &eyeZ, 1);
     crossProduct(rightX, rightY, rightZ, 
                  eyeX, eyeY, eyeZ, 
                  &upX, &upY, &upZ, 1);
     display();
   } else if (key == 'a') {
-    eyeX -= rightX * speed;
-    eyeY -= rightY * speed;
-    eyeZ -= rightZ * speed;
+    eyeX -= rightX * ANGLE_SPEED;
+    eyeY -= rightY * ANGLE_SPEED;
+    eyeZ -= rightZ * ANGLE_SPEED;
     normalize(&eyeX, &eyeY, &eyeZ, 1);
     crossProduct(eyeX, eyeY, eyeZ,
                  upX, upY, upZ,
                  &rightX, &rightY, &rightZ, 1);
     display();
   } else if (key == 'd') {
-    eyeX += rightX * speed;
-    eyeY += rightY * speed;
-    eyeZ += rightZ * speed;
+    eyeX += rightX * ANGLE_SPEED;
+    eyeY += rightY * ANGLE_SPEED;
+    eyeZ += rightZ * ANGLE_SPEED;
     normalize(&eyeX, &eyeY, &eyeZ, 1);
     crossProduct(eyeX, eyeY, eyeZ,
                  upX, upY, upZ,
                  &rightX, &rightY, &rightZ, 1);
     display();
   } else if (key == 'q') {
-    upX -= rightX * speed;
-    upY -= rightY * speed;
-    upZ -= rightZ * speed;
+    upX -= rightX * ANGLE_SPEED;
+    upY -= rightY * ANGLE_SPEED;
+    upZ -= rightZ * ANGLE_SPEED;
     normalize(&upX, &upY, &upZ, 1);
     crossProduct(eyeX, eyeY, eyeZ,
                  upX, upY, upZ,
                  &rightX, &rightY, &rightZ, 1);
     display();
   } else if (key == 'e') {
-    upX += rightX * speed;
-    upY += rightY * speed;
-    upZ += rightZ * speed;
+    upX += rightX * ANGLE_SPEED;
+    upY += rightY * ANGLE_SPEED;
+    upZ += rightZ * ANGLE_SPEED;
     normalize(&upX, &upY, &upZ, 1);
     crossProduct(eyeX, eyeY, eyeZ,
                  upX, upY, upZ,
                  &rightX, &rightY, &rightZ, 1);
     display();
   } else if (key == 'z') {
-    radius *= 1.1;
+    radius *= SCALE_STEP;
     display();
   } else if (key == 'x') {
-    radius /= 1.1;
+    radius /= SCALE_STEP;
+    display();
+  } else if (key == 'p') {
+    animated = 1;
+    display();
+  } else if (key == 'o') {
+    animated = 0;
     display();
   }
+}
+
+void reshape(GLint w, GLint h)
+{
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    
+    glViewport(0, 0, w, h);
+    float ratio = 1.0 * w / h;
+    gluPerspective(50.0, ratio, 1.0, 1000.0);
+
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
 }
 
 void init(void) {
@@ -180,6 +248,7 @@ int main(int argc, char **argv) {
   glutCreateWindow("Star");
   glutDisplayFunc(display);  
   glutKeyboardFunc(keyboard);
+  glutReshapeFunc(reshape);
   init();
   glutTimerFunc(30, update, 0);
   glutMainLoop();
