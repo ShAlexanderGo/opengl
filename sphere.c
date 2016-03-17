@@ -356,17 +356,9 @@ void reshape(GLint w, GLint h)
     glLoadIdentity();
 }
 
-GLfloat light_diffuse1[] = {0.0, 0.0, 1.0, 1.0};   /* Blue diffuse light. */
-GLfloat light_specular1[] = {1.0, 1.0, 1.0, 1.0};  /* White specular light. */
-GLfloat light_position1[] = {1.0, 1.0, 1.0, 0.0};  /* Infinite light1 location. */
-
-GLfloat light_diffuse2[] = {1.0, 0.0, 0.0, 1.0};   /* Red diffuse light. */
-GLfloat light_position2[] = {1.0, 1.0, 100.0, 1.0}; /* Light2 location in (1,1,10). */
 
 void init(void) {
   
-  glLightfv(GL_LIGHT0, GL_DIFFUSE, LIGHT_DIF);
-  glLightfv(GL_LIGHT0, GL_POSITION, LIGHT_POS);
   glEnable(GL_LIGHT0);
   glEnable(GL_LIGHTING);
   glEnable(GL_COLOR_MATERIAL);
