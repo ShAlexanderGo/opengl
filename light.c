@@ -3,6 +3,8 @@
 #include <math.h>
 #include <GL/glut.h>
 
+int cube = 1;
+
 //camera rotation
 float angleH = 0;
 float angleV = 45;
@@ -56,17 +58,38 @@ void coordinates(int length) {
   glEnable(GL_LIGHTING);
 }
 
-/*void drawCube(float size, int strips) {
+void drawSide(float size, int strips) {
+  float step = size / strips;
   glBegin(GL_QUADS);
     glNormal3f(0, 0, 1);
     int i,j;
-    for (i = 0; i < 
-    glVertex3f(size/2, size/2, size/2);
-    glVertex3f(size/2, -size/2, size/2);
-    glVertex3f(-size/2, -size/2, size/2);
-    glVertex3f(-size/2, size/2, size/2);
+    for (i = 0; i < strips; i++) {
+      for (j = 0; j < strips; j++) {
+        glVertex3f((i+1)*step-size/2, (j+1)*step-size/2, size/2);
+        glVertex3f((i)*step-size/2, (j+1)*step-size/2, size/2);
+        glVertex3f((i)*step-size/2, (j)*step-size/2, size/2);
+        glVertex3f((i+1)*step-size/2, (j)*step-size/2, size/2);
+      }
+    }
   glEnd();
-}*/
+}
+
+void drawCube(float size, int strips) {
+  glPushMatrix();
+    drawSide(size, strips);
+    glRotatef(90, 1, 0, 0);
+    drawSide(size, strips);
+    glRotatef(90, 1, 0, 0);
+    drawSide(size, strips);
+    glRotatef(90, 1, 0, 0);
+    drawSide(size, strips);
+    glRotatef(90, 1, 0, 0);
+    glRotatef(-90, 0, 1, 0);
+    drawSide(size, strips);
+    glRotatef(180, 0, 1, 0);
+    drawSide(size, strips);
+  glPopMatrix();
+}
 
 void display(void) {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -130,8 +153,11 @@ void display(void) {
 
   glPushMatrix();
   glTranslatef(0, 0, -20); 
-  //drawCube(30);
-  glutSolidCube(30);
+  if (cube) {
+    drawCube(30, 50);
+  } else {
+    glutSolidCube(30);
+  }
   glPopMatrix();
 
   glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, mat_emiss);
@@ -166,6 +192,12 @@ void keyboard(unsigned char key, int x, int y){
     if (radius < 0) radius = 0;
   } else if (key == 'm') {
     radius += 1;
+  } else if (key == 'p') {
+    if (cube) {
+      cube = 0;
+    } else {
+      cube = 1;
+    }
   } else if (key == '+') {
     cutoff += CUTOFF_STEP;
   } else if (key == '-') {
