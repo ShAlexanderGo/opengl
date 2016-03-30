@@ -80,9 +80,11 @@ void display(void) {
   * dir = {1, 0, 0}
   */
   glLightfv(GL_LIGHT0, GL_DIFFUSE, light0_diff);
-  const float light0_pos[] = {-50.0, 0.0, 0.0, 1.0};
+  const float light0_pos[] = {-LIGHT1_RADIUS, 0.0, 20.0, 1.0};
   glLightfv(GL_LIGHT0, GL_POSITION, light0_pos);
-  const float light0_dir[] = {1.0, 0.0, 0.0, 1.0};
+  const float light0_dir[] = {0.0 - light0_pos[0], 
+                              0.0 - light0_pos[1], 
+                              0.0 - light0_pos[2], 1.0};
   glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, light0_dir);
   glLightf(GL_LIGHT0, GL_SPOT_CUTOFF, cutoff);
   //////marker0
@@ -100,7 +102,7 @@ void display(void) {
   */
   glLightfv(GL_LIGHT1, GL_DIFFUSE, light1_diff);
   const float light1_pos[] = {LIGHT1_RADIUS * cosD(light1_angle), 
-                              LIGHT1_RADIUS * sinD(light1_angle), 0.0, 1.0};
+                              LIGHT1_RADIUS * sinD(light1_angle), 20.0, 1.0};
   glLightfv(GL_LIGHT1, GL_POSITION, light1_pos);
   const float light1_dir[] = {0.0 - light1_pos[0], 
                               0.0 - light1_pos[1], 
