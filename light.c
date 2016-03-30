@@ -13,7 +13,7 @@ const float ANGLE_SPEED = 2;
 //sphere
 float sphere_angle = 0;
 const float ROTATION_STEP = 2;
-const float RADIUS = 15;
+float radius = 15;
 GLfloat mat_emiss[] = {0.0, 0.0, 0.2, 1};
 
 //lights
@@ -21,10 +21,11 @@ float cutoff = 30;
 const float CUTOFF_STEP = 2;
 const float LIGHT0_RADIUS = 50;
 const float LIGHT1_RADIUS = 50;
-float light1_angle = 0;
+float light1_angle = 90;
 const float LIGHT1_STEP = 2;
 float light0_diff[] = {1.0, 0.0, 0.0, 1.0};
 float light1_diff[] = {0.0, 1.0, 0.0, 1.0};
+float light_null_pos[] = {0.0, 0.0, 0.0, 1.0};
 
 //Degrees to radians
 float toRadians(float angle) {
@@ -79,20 +80,24 @@ void display(void) {
   * light 0, z = 0, y = 0, x =-radius
   * dir = {1, 0, 0}
   */
-  glLightfv(GL_LIGHT0, GL_DIFFUSE, light0_diff);
   const float light0_pos[] = {-LIGHT1_RADIUS, 0.0, 20.0, 1.0};
-  glLightfv(GL_LIGHT0, GL_POSITION, light0_pos);
   const float light0_dir[] = {0.0 - light0_pos[0], 
                               0.0 - light0_pos[1], 
                               0.0 - light0_pos[2], 1.0};
-  glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, light0_dir);
-  glLightf(GL_LIGHT0, GL_SPOT_CUTOFF, cutoff);
-  //////marker0
   glPushMatrix();
   glTranslatef(light0_pos[0], light0_pos[1], light0_pos[2]);
+  glRotatef(cutoff, 0, 0, 1);
+  glLightfv(GL_LIGHT0, GL_DIFFUSE, light0_diff);
+  glLightfv(GL_LIGHT0, GL_POSITION, light_null_pos);
+  glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, light0_dir);
+  glLightf(GL_LIGHT0, GL_SPOT_CUTOFF, cutoff);
   glDisable(GL_LIGHTING);
   glColor3fv(light0_diff);
   glutSolidSphere(1, 10, 10);
+  glBegin(GL_LINES);
+    glVertex3f(0, 0, 0);
+    glVertex3f(light0_dir[0], light0_dir[1], light0_dir[2]);
+  glEnd();
   glEnable(GL_LIGHTING);
   glPopMatrix(); 
   //////  
@@ -100,23 +105,27 @@ void display(void) {
   * light 1, z = 0, y = 0, x =+radius
   * dir = {-1, 0, 0}
   */
-  glLightfv(GL_LIGHT1, GL_DIFFUSE, light1_diff);
   const float light1_pos[] = {LIGHT1_RADIUS * cosD(light1_angle), 
                               LIGHT1_RADIUS * sinD(light1_angle), 20.0, 1.0};
-  glLightfv(GL_LIGHT1, GL_POSITION, light1_pos);
   const float light1_dir[] = {0.0 - light1_pos[0], 
                               0.0 - light1_pos[1], 
                               0.0 - light1_pos[2], 1.0};
-  glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, light1_dir);
-  glLightf(GL_LIGHT1, GL_SPOT_CUTOFF, cutoff);
-  //////marker1
   glPushMatrix();
   glTranslatef(light1_pos[0], light1_pos[1], light1_pos[2]);
+  glRotatef(cutoff, 0, 0, 1);
+  glLightfv(GL_LIGHT1, GL_DIFFUSE, light1_diff);
+  glLightfv(GL_LIGHT1, GL_POSITION, light_null_pos);
+  glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, light1_dir);
+  glLightf(GL_LIGHT1, GL_SPOT_CUTOFF, cutoff);
   glDisable(GL_LIGHTING);
   glColor3fv(light1_diff);
   glutSolidSphere(1, 10, 10);
+  glBegin(GL_LINES);
+    glVertex3f(0, 0, 0);
+    glVertex3f(light1_dir[0], light1_dir[1], light1_dir[2]);
+  glEnd();
   glEnable(GL_LIGHTING);
-  glPopMatrix(); 
+  glPopMatrix();  
   //////    
 
   glPushMatrix();
@@ -128,7 +137,7 @@ void display(void) {
   glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, mat_emiss);
   glPushMatrix();
   glRotatef(sphere_angle, 0, 0, 1);
-  glTranslatef(RADIUS, 0, 0);
+  glTranslatef(radius, 0, 0);
   glutSolidSphere(4, 100, 100);
   glPopMatrix(); 
   const GLfloat mat_emiss_null[] = {0.0, 0.0, 0.0, 0.0};  
@@ -152,10 +161,16 @@ void keyboard(unsigned char key, int x, int y){
     scale *= SCALE_STEP;
   } else if (key == 'o') {
     scale /= SCALE_STEP;
+  } else if (key == 'n') {
+    radius -= 1;
+    if (radius < 0) radius = 0;
+  } else if (key == 'm') {
+    radius += 1;
   } else if (key == '+') {
     cutoff += CUTOFF_STEP;
   } else if (key == '-') {
     cutoff -= CUTOFF_STEP;
+    if (cutoff < 0) cutoff = 0;
   } else if (key == 'w') {
     light1_angle += LIGHT1_STEP;
   } else if (key == 's') {
