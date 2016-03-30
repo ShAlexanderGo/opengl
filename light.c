@@ -5,7 +5,7 @@
 
 //camera rotation
 float angleH = 0;
-float angleV = 0;
+float angleV = 45;
 float scale = 1;
 const float SCALE_STEP = 1.1;
 const float ANGLE_SPEED = 2;
@@ -54,6 +54,18 @@ void coordinates(int length) {
   glEnd();
   glEnable(GL_LIGHTING);
 }
+
+/*void drawCube(float size, int strips) {
+  glBegin(GL_QUADS);
+    glNormal3f(0, 0, 1);
+    int i,j;
+    for (i = 0; i < 
+    glVertex3f(size/2, size/2, size/2);
+    glVertex3f(size/2, -size/2, size/2);
+    glVertex3f(-size/2, -size/2, size/2);
+    glVertex3f(-size/2, size/2, size/2);
+  glEnd();
+}*/
 
 void display(void) {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -107,6 +119,7 @@ void display(void) {
 
   glPushMatrix();
   glTranslatef(0, 0, -20); 
+  //drawCube(30);
   glutSolidCube(30);
   glPopMatrix();
 
