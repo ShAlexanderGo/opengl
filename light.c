@@ -16,7 +16,7 @@ const float ANGLE_SPEED = 2;
 float sphere_angle = 0;
 const float ROTATION_STEP = 2;
 float radius = 15;
-GLfloat mat_emiss[] = {0.0, 0.0, 0.2, 1};
+GLfloat mat_emiss[] = {0.2, 0.2, 0.0, 1};
 
 //lights
 float cutoff = 30;
@@ -26,7 +26,7 @@ const float LIGHT1_RADIUS = 50;
 float light1_angle = 90;
 const float LIGHT1_STEP = 2;
 float light0_diff[] = {1.0, 0.0, 0.0, 1.0};
-float light1_diff[] = {0.0, 1.0, 0.0, 1.0};
+float light1_diff[] = {0.0, 0.0, 1.0, 1.0};
 float light_null_pos[] = {0.0, 0.0, 0.0, 1.0};
 
 //Degrees to radians
