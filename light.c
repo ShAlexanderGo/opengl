@@ -94,10 +94,7 @@ void drawCube(float size, int strips) {
 void display(void) {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glLoadIdentity();
-  gluLookAt(100*cosD(45), 100*sinD(45), 0, 0, 0, 0, 0, 0, 1);
-  glRotatef(angleV, -1, 1, 0);
-  glRotatef(angleH, 0, 0, -1);
-  glScalef(scale, scale, scale);
+  gluLookAt(scale*100*cosD(45+angleH)*cosD(angleV), scale*100*sinD(45+angleH)*cosD(angleV), scale*100*sinD(angleV), 0, 0, 0, 0, 0, 1);
   coordinates(50);
   /**
   * light 0, z = 0, y = 0, x =-radius
@@ -175,10 +172,10 @@ void display(void) {
 void keyboard(unsigned char key, int x, int y){
   if (key == 'i') {
     angleV += ANGLE_SPEED;
-    if (angleV > 90) angleV = 90;
+    if (angleV > 89.9) angleV = 89.9;
   } else if (key == 'k') {
     angleV -= ANGLE_SPEED;
-    if (angleV < -90) angleV = -90;
+    if (angleV < -89.9) angleV = -89.9;
   } else if (key == 'j') {
     angleH -= ANGLE_SPEED;
   } else if (key == 'l') {
@@ -293,7 +290,7 @@ void init(void) {
 
   const GLfloat mat_diff[] = {0.5,0.5,0.5,1};
   glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, mat_diff);
-  const GLfloat mat_spec[] = {1,0.0,0.0,1};
+  const GLfloat mat_spec[] = {1,1.0,1.0,1};
   glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, mat_spec); 
   glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 90);
 }
