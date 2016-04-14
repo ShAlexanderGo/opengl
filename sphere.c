@@ -2,46 +2,29 @@
 #include <stdlib.h>
 #include <math.h>
 #include <GL/glut.h>
+#include "bmp_texture.h"
 
-const float SPHERE_SHIFT_MIN = 35.0;
-const float SPHERE_SHIFT_MAX = 100.0;
+//eye position
+float angleH = 0;
+float angleV = 45;
+float scale = 1;
+const float SCALE_STEP = 1.1;
+const float ANGLE_SPEED = 2;
+//light position
+float lightH = 0;
+float lightV = 0;
+//params
+int textType = 0;
+int normType = 0;
+int strips = 10;
 
-const float PYRAMID_COLOR[] = {1.0, 0.0, 1.0};
-const float SPHERE_COLOR[] = {0.0,0.0,1.0};
-
-const float LIGHT_DIF[] = {0.05, 0.05, 0.05, 1.0};
-const float LIGHT_POS[] = {-100.0, -100.0, 100.0, 1.0};
-
-float angleX = 0; //any
-float angleY = 0; //-90 +90
-float shift = 35;
-float anDir = 1.0;
-float scale = 1.0;
-int animated = 0;
-
-////////////////////////////////////
-float eyeRadius = 100;
-float speed = 0.07;
-float eyeX = 0;
-float eyeY = 0;
-float eyeZ = 1;
-float upX = 1;
-float upY = 0;
-float upZ = 0;
-float rightX = 0;
-float rightY = 1;
-float rightZ = 0;
-/*
-eye*up=right
-right*eye=up
-up*right=eye
-*/
 void normalize(float* x, float* y, float* z, float length) {
   float cLength = sqrt((*x)*(*x)+(*y)*(*y)+(*z)*(*z));
   (*x) = (*x) * length / cLength;
   (*y) = (*y) * length / cLength;
   (*z) = (*z) * length / cLength;
 }
+
 void crossProduct(float x1, float y1, float z1,
                   float x2, float y2, float z2,
                   float* x3, float* y3, float* z3,
@@ -51,8 +34,45 @@ void crossProduct(float x1, float y1, float z1,
   (*z3) = (x1*y2 - y1*x2);
   normalize(x3, y3, z3, length);
 }
-/////////////////////////////////////
 
+/////////////////////////////////////
+GLuint texId;
+GLuint loadBMPTexture (const char *filename){
+  gl_texture_t *bmp_tex = NULL;
+  GLuint tex_id = 0;
+
+  bmp_tex = ReadBMPFile (filename);
+
+  if (bmp_tex && bmp_tex->texels)
+    {
+      /* generate texture */
+      glGenTextures (1, &bmp_tex->id);
+      glBindTexture (GL_TEXTURE_2D, bmp_tex->id);
+
+      /* setup some parameters for texture filters and mipmapping */
+      glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+      glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+      /*
+      glTexImage2D (GL_TEXTURE_2D, 0, bmp_tex->internalFormat,
+		    bmp_tex->width, bmp_tex->height, 0, bmp_tex->format,
+		    GL_UNSIGNED_BYTE, bmp_tex->texels);
+      */
+
+      gluBuild2DMipmaps (GL_TEXTURE_2D, bmp_tex->internalFormat,
+			 bmp_tex->width, bmp_tex->height,
+			 bmp_tex->format, GL_UNSIGNED_BYTE, bmp_tex->texels);
+
+      tex_id = bmp_tex->id;
+
+      /* OpenGL has its own copy of texture data */
+      free (bmp_tex->texels);
+      free (bmp_tex);
+    }
+
+  return tex_id;
+}
+/////////////////////////////////////
 //Degrees to radians
 float toRadians(float angle) {
   return angle * (M_PI / 180);
@@ -69,278 +89,139 @@ float cosD(float degree) {
 void drawSphere(float radius, int vert, int hor) {
   float vertAngleStep = 180.0 / vert;
   float horAngleStep = 360.0 / hor;
-  glBegin(GL_TRIANGLE_FAN);
-    //glColor3f(1,0,0);
-    glNormal3f(0, 0, radius);
-    glVertex3f(0, 0, radius);
-    int i,j;
-    for (i = hor; i >= 0; i--) {
-      //glColor3f(1.0*i/hor,0,0);
-      glNormal3f(radius*cosD(90.0 - vertAngleStep)*sinD(i*horAngleStep), 
-                 radius*cosD(90.0 - vertAngleStep)*cosD(i*horAngleStep), 
-                 radius*sinD(90.0 - vertAngleStep)); 
-      glVertex3f(radius*cosD(90.0 - vertAngleStep)*sinD(i*horAngleStep), 
-                 radius*cosD(90.0 - vertAngleStep)*cosD(i*horAngleStep), 
-                 radius*sinD(90.0 - vertAngleStep)); 
-    }
-  glEnd();
+  glEnable (GL_TEXTURE_2D);
+  glBindTexture (GL_TEXTURE_2D, texId);
+  int i,j;
   glBegin(GL_QUADS);
-    for (j = 1; j < vert-1; j++) {
+    for (j = 0; j < vert; j++) {
       for (i = 0; i < hor; i++) {
         int i1 = i;
         int j1 = j;
         int i2 = i + 1;
         int j2 = j + 1;
-        float radius1 = radius*cosD(90.0-j1*vertAngleStep);
-        float radius2 = radius*cosD(90.0-j2*vertAngleStep);
-        //glColor3f(1,0,0);
-        glNormal3f(radius1*sinD(i1*horAngleStep), 
-                 radius1*cosD(i1*horAngleStep), 
-                 radius*sinD(90.0-j1*vertAngleStep));
-        glVertex3f(radius1*sinD(i1*horAngleStep), 
-                 radius1*cosD(i1*horAngleStep), 
-                 radius*sinD(90.0-j1*vertAngleStep));
-        //glColor3f(0,1,0);
-        glNormal3f(radius1*sinD(i2*horAngleStep), 
-                 radius1*cosD(i2*horAngleStep), 
-                 radius*sinD(90.0-j1*vertAngleStep)); 
-        glVertex3f(radius1*sinD(i2*horAngleStep), 
-                 radius1*cosD(i2*horAngleStep), 
-                 radius*sinD(90.0-j1*vertAngleStep));
-        //glColor3f(0,0,1);
-        glNormal3f(radius2*sinD(i2*horAngleStep), 
-                 radius2*cosD(i2*horAngleStep), 
-                 radius*sinD(90.0-j2*vertAngleStep)); 
-        glVertex3f(radius2*sinD(i2*horAngleStep), 
-                 radius2*cosD(i2*horAngleStep), 
-                 radius*sinD(90.0-j2*vertAngleStep));
-        //glColor3f(1,1,1);
-        glNormal3f(radius2*sinD(i1*horAngleStep), 
-                 radius2*cosD(i1*horAngleStep), 
-                 radius*sinD(90.0-j2*vertAngleStep));  
-        glVertex3f(radius2*sinD(i1*horAngleStep), 
-                 radius2*cosD(i1*horAngleStep), 
-                 radius*sinD(90.0-j2*vertAngleStep)); 
+        int iM = 0.5 * (i1 + i2);
+        int jM = 0.5 * (j1 + j2);
+        float radius1 = radius * cosD(90.0 - j1 * vertAngleStep);
+        float radius2 = radius * cosD(90.0 - j2 * vertAngleStep);
+        float radiusM = radius * cosD(90.0 - jM * vertAngleStep);        
+
+        if (!normType)
+          glNormal3f(radiusM * sinD(iM * horAngleStep), 
+                     radiusM * cosD(iM * horAngleStep), 
+                     radiusM * sinD(90.0 - jM * vertAngleStep));
+
+        glTexCoord2f ((float)i1 / hor, (float)j1 / vert);
+        if (normType)
+          glNormal3f(radius1 * sinD(i1 * horAngleStep), 
+                     radius1 * cosD(i1 * horAngleStep), 
+                     radius * sinD(90.0 - j1 * vertAngleStep));
+        glVertex3f(radius1 * sinD(i1 * horAngleStep), 
+                   radius1 * cosD(i1 * horAngleStep), 
+                   radius * sinD(90.0 - j1 * vertAngleStep));
+        
+        glTexCoord2f ((float)i2 / hor, (float)j1 / vert);
+        if (normType)
+          glNormal3f(radius1 * sinD(i2 * horAngleStep), 
+                     radius1 * cosD(i2 * horAngleStep), 
+                     radius * sinD(90.0 - j1 * vertAngleStep)); 
+        glVertex3f(radius1 * sinD(i2 * horAngleStep), 
+                   radius1 * cosD(i2 * horAngleStep), 
+                   radius * sinD(90.0 - j1 * vertAngleStep));
+        
+        glTexCoord2f ((float)i2 / hor, (float)j2 / vert);
+        if (normType)
+          glNormal3f(radius2 * sinD(i2 * horAngleStep), 
+                     radius2 * cosD(i2 * horAngleStep), 
+                     radius * sinD(90.0 - j2 * vertAngleStep)); 
+        glVertex3f(radius2 * sinD(i2 * horAngleStep), 
+                   radius2 * cosD(i2 * horAngleStep), 
+                   radius * sinD(90.0 - j2 * vertAngleStep));
+        
+        glTexCoord2f ((float)i1 / hor, (float)j2 / vert);
+        if (normType)
+          glNormal3f(radius2 * sinD(i1 * horAngleStep), 
+                     radius2 * cosD(i1 * horAngleStep), 
+                     radius * sinD(90.0 - j2 * vertAngleStep));  
+        glVertex3f(radius2 * sinD(i1 * horAngleStep), 
+                   radius2 * cosD(i1 * horAngleStep), 
+                   radius * sinD(90.0 - j2 * vertAngleStep)); 
       }
     }
   glEnd();
-  glBegin(GL_TRIANGLE_FAN);
-    //glColor3f(1,0,0);
-    glNormal3f(0, 0, -radius);
-    glVertex3f(0, 0, -radius);
-    for (i = 0; i <= hor; i++) {
-      //glColor3f(1.0-1.0*i/hor,0,0);
-      glNormal3f(radius*cosD(90.0 - vertAngleStep)*sinD(i*horAngleStep), 
-                 radius*cosD(90.0 - vertAngleStep)*cosD(i*horAngleStep), 
-                 radius*sinD(-90.0 + vertAngleStep)); 
-      glVertex3f(radius*cosD(90.0 - vertAngleStep)*sinD(i*horAngleStep), 
-                 radius*cosD(90.0 - vertAngleStep)*cosD(i*horAngleStep), 
-                 radius*sinD(-90.0 + vertAngleStep)); 
-    }
-  glEnd();
+
 }
-
-/*Second variant*/
-void drawSphere2(float radius, int vert, int hor) {
-  float vertAngleStep = 180.0 / vert;
-  float horAngleStep = 360.0 / hor;
-  glBegin(GL_TRIANGLES);
-    //glColor3f(1,0,0);
-    int i,j;
-    for (i = hor; i >= 0; i--) {
-      //glColor3f(1.0*i/hor,0,0);
-      float x1 = radius*cosD(90.0 - vertAngleStep)*sinD(i*horAngleStep);
-      float y1 = radius*cosD(90.0 - vertAngleStep)*cosD(i*horAngleStep);
-      float z1 = radius*sinD(90.0 - vertAngleStep) - radius;
-      float x2 = radius*cosD(90.0 - vertAngleStep)*sinD((i-1)*horAngleStep);
-      float y2 = radius*cosD(90.0 - vertAngleStep)*cosD((i-1)*horAngleStep);
-      float z2 = radius*sinD(90.0 - vertAngleStep) - radius;
-      float x3;
-      float y3;
-      float z3;
-      crossProduct(x1, y1, z1, x2, y2, z2, &x3, &y3, &z3, 1);
-      glNormal3f(x3, 
-                 y3, 
-                 z3); 
-      glVertex3f(0, 0, radius);
-      glVertex3f(radius*cosD(90.0 - vertAngleStep)*sinD(i*horAngleStep), 
-                 radius*cosD(90.0 - vertAngleStep)*cosD(i*horAngleStep), 
-                 radius*sinD(90.0 - vertAngleStep)); 
-      glVertex3f(radius*cosD(90.0 - vertAngleStep)*sinD((i-1)*horAngleStep), 
-                 radius*cosD(90.0 - vertAngleStep)*cosD((i-1)*horAngleStep), 
-                 radius*sinD(90.0 - vertAngleStep)); 
-    }
-  glEnd();
-  glBegin(GL_QUADS);
-    for (j = 1; j < vert-1; j++) {
-      for (i = 0; i < hor; i++) {
-        int i1 = i;
-        int j1 = j;
-        int i2 = i + 1;
-        int j2 = j + 1;
-        int iM = 0.5*(i1+i2);
-        int jM = 0.5*(j1+j2);
-        float radius1 = radius*cosD(90.0-j1*vertAngleStep);
-        float radius2 = radius*cosD(90.0-j2*vertAngleStep);
-        float radiusM = radius*cosD(90.0-jM*vertAngleStep);
-        //glColor3f(1,0,0);
-        glNormal3f(radiusM*sinD(iM*horAngleStep), 
-                 radiusM*cosD(iM*horAngleStep), 
-                 radiusM*sinD(90.0-jM*vertAngleStep));
-        glVertex3f(radius1*sinD(i1*horAngleStep), 
-                 radius1*cosD(i1*horAngleStep), 
-                 radius*sinD(90.0-j1*vertAngleStep));
-        //glColor3f(0,1,0);
-        /*glNormal3f(radius1*sinD(i2*horAngleStep), 
-                 radius1*cosD(i2*horAngleStep), 
-                 radius*sinD(90.0-j1*vertAngleStep)); */
-        glVertex3f(radius1*sinD(i2*horAngleStep), 
-                 radius1*cosD(i2*horAngleStep), 
-                 radius*sinD(90.0-j1*vertAngleStep));
-        //glColor3f(0,0,1);
-        /*glNormal3f(radius2*sinD(i2*horAngleStep), 
-                 radius2*cosD(i2*horAngleStep), 
-                 radius*sinD(90.0-j2*vertAngleStep)); */
-        glVertex3f(radius2*sinD(i2*horAngleStep), 
-                 radius2*cosD(i2*horAngleStep), 
-                 radius*sinD(90.0-j2*vertAngleStep));
-        //glColor3f(1,1,1);
-        /*glNormal3f(radius2*sinD(i1*horAngleStep), 
-                 radius2*cosD(i1*horAngleStep), 
-                 radius*sinD(90.0-j2*vertAngleStep));  */
-        glVertex3f(radius2*sinD(i1*horAngleStep), 
-                 radius2*cosD(i1*horAngleStep), 
-                 radius*sinD(90.0-j2*vertAngleStep)); 
-      }
-    }
-  glEnd();
-  /*glBegin(GL_TRIANGLE_FAN);
-    //glColor3f(1,0,0);
-    glNormal3f(0, 0, -radius);
-    glVertex3f(0, 0, -radius);
-    for (i = 0; i <= hor; i++) {
-      //glColor3f(1.0-1.0*i/hor,0,0);
-      glNormal3f(radius*cosD(90.0 - vertAngleStep)*sinD(i*horAngleStep), 
-                 radius*cosD(90.0 - vertAngleStep)*cosD(i*horAngleStep), 
-                 radius*sinD(-90.0 + vertAngleStep)); 
-      glVertex3f(radius*cosD(90.0 - vertAngleStep)*sinD(i*horAngleStep), 
-                 radius*cosD(90.0 - vertAngleStep)*cosD(i*horAngleStep), 
-                 radius*sinD(-90.0 + vertAngleStep)); 
-    }
-  glEnd();*/
-}
-
-float lLen = 1.2;
-
-void drawNormals(float radius, int vert, int hor) {
-  float vertAngleStep = 180.0 / vert;
-  float horAngleStep = 360.0 / hor;
-  glBegin(GL_LINES);
-    glVertex3f(0, 0, radius);
-    glVertex3f(0, 0, radius*lLen);
-    int i,j;
-    for (j = 1; j < vert; j++) {
-      for (i = 0; i < hor; i++) {
-        float radius1 = radius*cosD(90.0-j*vertAngleStep);
-        glVertex3f(radius1*sinD(i*horAngleStep), 
-                 radius1*cosD(i*horAngleStep), 
-                 radius*sinD(90.0-j*vertAngleStep));
-        glVertex3f(radius1*sinD(i*horAngleStep)*lLen, 
-                 radius1*cosD(i*horAngleStep)*lLen, 
-                 radius*sinD(90.0-j*vertAngleStep)*lLen);
-      }
-    }
-    glVertex3f(0, 0, -radius);
-    glVertex3f(0, 0, -radius*lLen);
-  glEnd();
-}
-
-int normals = 0;
 
 void display(void) {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glLoadIdentity();
-  //glTranslatef(0, 0, -100);
-  //glScalef(scale, scale, scale);
-  //glRotatef(angleY, 1, 0, 0);
-  //glRotatef(angleX, 0, 1, 0);
-  gluLookAt(eyeRadius*eyeX, eyeRadius*eyeY, eyeRadius*eyeZ, 0, 0, 0, upX, upY, upZ);
+  gluLookAt(scale * 100 * cosD(-angleH) * cosD(-angleV), 
+            scale * 100 * sinD(-angleH) * cosD(-angleV), 
+            scale * 100 * sinD(-angleV), 0, 0, 0, 0, 0, -1);
+  const float LIGHT_DIF[] = {1.0, 1.0, 1.0, 1.0};
   glLightfv(GL_LIGHT0, GL_DIFFUSE, LIGHT_DIF);
+  const float LIGHT_POS[] = {100 * cosD(-lightH) * cosD(-lightV), 
+                             100 * sinD(-lightH) * cosD(-lightV), 
+                             100 * sinD(-lightV), 1.0};
   glLightfv(GL_LIGHT0, GL_POSITION, LIGHT_POS);
-  glColor3f(1,1,1);
-  drawSphere2(20, 10, 10);
-  if (normals) {
-    glColor3f(1,0,0);
-    drawNormals(20, 10, 10);
-  }
+  drawSphere(20, strips, strips);
   glutSwapBuffers();
 }
 
 void keyboard(unsigned char key, int x, int y){
   if (key == 'w') {
-    eyeX += upX * speed;
-    eyeY += upY * speed;
-    eyeZ += upZ * speed;
-    normalize(&eyeX, &eyeY, &eyeZ, 1);
-    crossProduct(rightX, rightY, rightZ, 
-                 eyeX, eyeY, eyeZ, 
-                 &upX, &upY, &upZ, 1);
-    display();
+    angleV += ANGLE_SPEED;
+    if (angleV > 89.9) angleV = 89.9;
   } else if (key == 's') {
-    eyeX -= upX * speed;
-    eyeY -= upY * speed;
-    eyeZ -= upZ * speed;
-    normalize(&eyeX, &eyeY, &eyeZ, 1);
-    crossProduct(rightX, rightY, rightZ, 
-                 eyeX, eyeY, eyeZ, 
-                 &upX, &upY, &upZ, 1);
-    display();
+    angleV -= ANGLE_SPEED;
+    if (angleV < -89.9) angleV = -89.9;
   } else if (key == 'a') {
-    eyeX -= rightX * speed;
-    eyeY -= rightY * speed;
-    eyeZ -= rightZ * speed;
-    normalize(&eyeX, &eyeY, &eyeZ, 1);
-    crossProduct(eyeX, eyeY, eyeZ,
-                 upX, upY, upZ,
-                 &rightX, &rightY, &rightZ, 1);
-    display();
+    angleH -= ANGLE_SPEED;
   } else if (key == 'd') {
-    eyeX += rightX * speed;
-    eyeY += rightY * speed;
-    eyeZ += rightZ * speed;
-    normalize(&eyeX, &eyeY, &eyeZ, 1);
-    crossProduct(eyeX, eyeY, eyeZ,
-                 upX, upY, upZ,
-                 &rightX, &rightY, &rightZ, 1);
-    display();
+    angleH += ANGLE_SPEED;
   } else if (key == 'q') {
-    upX -= rightX * speed;
-    upY -= rightY * speed;
-    upZ -= rightZ * speed;
-    normalize(&upX, &upY, &upZ, 1);
-    crossProduct(eyeX, eyeY, eyeZ,
-                 upX, upY, upZ,
-                 &rightX, &rightY, &rightZ, 1);
-    display();
+    scale *= SCALE_STEP;
   } else if (key == 'e') {
-    upX += rightX * speed;
-    upY += rightY * speed;
-    upZ += rightZ * speed;
-    normalize(&upX, &upY, &upZ, 1);
-    crossProduct(eyeX, eyeY, eyeZ,
-                 upX, upY, upZ,
-                 &rightX, &rightY, &rightZ, 1);
-    display();
-  } else if (key == 'z') {
-    eyeRadius *= 1.1;
-    display();
-  } else if (key == 'x') {
-    eyeRadius /= 1.1;
-    display();
-  } else if (key == 'n') {
-    normals = !normals;
-    display();
+    scale /= SCALE_STEP;
+  } else if (key == '+') {
+    strips += 1;
+    if (strips > 100)
+      strips = 100;
+  } else if (key == '-') {
+    strips -= 1;
+    if (strips < 3)
+      strips = 3;
+  } else if (key == 'o') {
+    textType = !textType;
+    char* name;
+    if (textType) {
+      name = "earth.bmp";
+    } else {
+      name = "mars.bmp";
+    }
+    if (!(texId = loadBMPTexture(name))){
+      exit (-1);
+    }
+  } else if (key == 'p') {
+    normType = !normType;
   }
+  display();
+}
+
+void keyboard2(int key, int x, int y){
+  if (key == GLUT_KEY_UP ){
+    lightV += ANGLE_SPEED;
+    if (lightV > 89.9)
+      lightV = 89.9;
+  } else if (key == GLUT_KEY_DOWN ){
+    lightV -= ANGLE_SPEED;
+    if (lightV < -89.9)
+      lightV = -89.9;
+  } else if (key == GLUT_KEY_RIGHT ){
+    lightH += ANGLE_SPEED;
+  } else if (key == GLUT_KEY_LEFT ){
+    lightH -= ANGLE_SPEED;    
+  }
+  display();
 }
 
 void reshape(GLint w, GLint h)
@@ -361,15 +242,26 @@ void init(void) {
   
   glEnable(GL_LIGHT0);
   glEnable(GL_LIGHTING);
-  glEnable(GL_COLOR_MATERIAL);
-  glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
+  
+  const GLfloat MAT_DIFF[] = {0.3,0.3,0.3,1};
+  glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, MAT_DIFF);
+  const GLfloat MAT_AMB[] = {1.0,1.0,1.0,1};
+  glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, MAT_AMB);
+  const float LIGHT_AMB[] = {0.2, 0.2, 0.2, 1.0};
+  glLightfv(GL_LIGHT0, GL_AMBIENT, LIGHT_AMB);
+
   glEnable(GL_DEPTH_TEST);
   //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
   glMatrixMode(GL_PROJECTION);
   //glOrtho(-50, 50, -50, 50, -50, 50);
   gluPerspective(50.0, 1.0, 1.0, 1000.0);
+
+  /* load png texture */
+  if ( !(texId = loadBMPTexture("mars.bmp"))){
+    exit (-1);
+  }
+
   glMatrixMode(GL_MODELVIEW);
-  
 }
 
 
@@ -379,6 +271,7 @@ int main(int argc, char **argv) {
   glutCreateWindow("Star");
   glutDisplayFunc(display);  
   glutKeyboardFunc(keyboard);
+  glutSpecialFunc(keyboard2);
   glutReshapeFunc(reshape);
   init();
   glutMainLoop();
